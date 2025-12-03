@@ -1,0 +1,25 @@
+Build & Run
+
+From the project root:
+
+mkdir build
+cd build
+cmake ..
+cmake --build .
+
+
+Run tests:
+
+cd build/tests
+ctest
+
+
+Or run the test binary directly:
+
+./tests/test_multiply
+
+At root
+cmake -S . -B build
+cmake --build build --config Debug
+./build/src/Debug/entry.exe
+uvicorn simple_fastapi:app --reload

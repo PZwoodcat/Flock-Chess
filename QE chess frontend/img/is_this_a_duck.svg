@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 200 200" role="img" aria-label="Chess-piece style duck">
+  <!-- pedestal / base -->
+  <g id="base">
+    <rect x="28" y="150" width="144" height="10" rx="3" fill="#111"/>
+    <rect x="40" y="140" width="120" height="10" rx="3" fill="#111"/>
+    <rect x="52" y="130" width="96" height="10" rx="3" fill="#111"/>
+  </g>
+
+  <!-- body (main silhouette) -->
+  <g id="duck-silhouette" transform="translate(0,-6)">
+    <!-- body -->
+    <path d="M50 120
+             C45 100, 55 78, 80 70
+             C105 62, 130 70, 145 88
+             C155 100, 152 118, 140 128
+             C128 138, 90 150, 70 148
+             C60 146,52 136,50 120 Z"
+          fill="#111" stroke="#111" stroke-width="1"/>
+
+    <!-- neck/head -->
+    <path d="M80 70
+             C78 58, 92 48, 108 52
+             C122 55,132 70,128 78
+             C124 86,106 86,98 82
+             C92 78,86 74,80 70 Z"
+          fill="#111" stroke="#111" stroke-width="1"/>
+
+    <!-- beak (stylized, like a small triangle) -->
+    <path d="M128 70 L144 68 L136 78 Z" fill="#e9b033" stroke="#b37b21" stroke-width="1"/>
+
+    <!-- eye: small highlight circle (white) on dark piece -->
+    <circle cx="112" cy="66" r="2.5" fill="#fff"/>
+
+    <!-- wing / carved detail (rimmed shape like chess carvings) -->
+    <path d="M98 96
+             C110 92,122 94,132 104
+             C118 108,104 106,98 96 Z"
+          fill="#0a0a0a" opacity="0.9"/>
+  </g>
+
+  <!-- decorative top ring like some chess sets -->
+  <g id="crown">
+    <ellipse cx="100" cy="56" rx="34" ry="6" fill="#111" />
+    <ellipse cx="100" cy="52" rx="22" ry="4" fill="#fff" opacity="0.03"/>
+  </g>
+
+  <!-- outline stroke to give that bold chess-piece silhouette -->
+  <path d="M50 120
+             C45 100, 55 78, 80 70
+             C78 58, 92 48, 108 52
+             C122 55,132 70,145 88
+             C155 100, 152 118,140 128
+             C128 138,90 150,70 148
+             C60 146,52 136,50 120 Z"
+        fill="none" stroke="#000" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.65"/>
+
+  <!-- optional small label (keeps it chess-set-y) -->
+  <text x="18" y="192" font-family="Georgia, serif" font-size="11" fill="#222">Duck — chess-piece style</text>
+</svg>

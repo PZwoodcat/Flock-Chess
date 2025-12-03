@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 200 200" role="img" aria-label="Cute yellow duck">
+  <!-- background -->
+  <rect width="100%" height="100%" fill="transparent"/>
+
+  <!-- body -->
+  <ellipse cx="95" cy="110" rx="55" ry="40" fill="#FFD54A" stroke="#E6A800" stroke-width="2"/>
+
+  <!-- head -->
+  <circle cx="140" cy="78" r="28" fill="#FFD54A" stroke="#E6A800" stroke-width="2"/>
+
+  <!-- beak (two-part for upper/lower) -->
+  <path d="M163 78
+           q18 6 0 16
+           q-12-6 -24-6
+           q-6 -6 24 -26z"
+        fill="#FF8A00" stroke="#C56800" stroke-width="1"/>
+
+  <!-- eye -->
+  <circle cx="130" cy="72" r="4.5" fill="#111"/>
+  <circle cx="128.5" cy="70.5" r="1.2" fill="#fff"/>
+
+  <!-- wing -->
+  <path d="M90 98
+           q18 -8 34 2
+           q-14 10 -34 6
+           q-8 -3 -0 -8z"
+        fill="#FFCF66" stroke="#E6A800" stroke-width="1"/>
+
+  <!-- tail feathers -->
+  <path d="M55 100
+           q-6 -8 -12 -6
+           q6 10 4 18
+           q10 -4 8 -12z"
+        fill="#FFD54A" stroke="#E6A800" stroke-width="1"/>
+
+  <!-- feet -->
+  <path d="M80 146 q8 12 18 0" stroke="#FF8A00" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M120 148 q8 10 18 0" stroke="#FF8A00" stroke-width="6" stroke-linecap="round" fill="none"/>
+
+  <!-- subtle shadow under body -->
+  <ellipse cx="95" cy="155" rx="45" ry="6" fill="#000" opacity="0.07"/>
+
+  <!-- label (optional) -->
+  <text x="12" y="192" font-family="Verdana, sans-serif" font-size="11" fill="#444">Friendly duck — try rotating the beak if you want a side profile</text>
+</svg>

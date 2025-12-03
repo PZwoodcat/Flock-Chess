@@ -1,0 +1,6 @@
+QE chess - private
+build
+QE chess server/__pycache__
+QE chess server/Include
+QE chess server/Lib
+QE chess server/Scripts
