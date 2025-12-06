@@ -1,3 +1,7 @@
 uvicorn
 fastapi
 pydantic
+boto3 
+moto 
+pytest
+awscli
