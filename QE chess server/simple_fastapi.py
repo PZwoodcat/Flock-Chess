@@ -31,8 +31,17 @@ class MultiplyInput(BaseModel):
     a: int
     b: int
 
-@app.post("/compute")
+@app.post("/multiply")
 def compute(data: MultiplyInput):
+    result = subprocess.run(
+        [exe_path, str(data.a), str(data.b)],
+        capture_output=True,
+        text=True
+    )
+    return {"output": result.stdout.strip()}
+
+@app.post("/analyze_test")
+def analyze_test(data: MultiplyInput):
     result = subprocess.run(
         [exe_path, str(data.a), str(data.b)],
         capture_output=True,

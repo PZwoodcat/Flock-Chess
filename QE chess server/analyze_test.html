@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chessboard — analyze_test frontend</title>
+<style>
+  :root{
+    --square-size: 64px;
+    --light: #f0d9b5;
+    --dark:  #b58863;
+    --accent: rgba(46, 204, 113, 0.9); /* green for dots */
+  }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; background:#fafafa; }
+  .board-wrap { position:relative; }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(8, var(--square-size));
+    grid-template-rows: repeat(8, var(--square-size));
+    border: 2px solid #333;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    user-select:none;
+    touch-action: none;
+  }
+  .square {
+    width: var(--square-size);
+    height: var(--square-size);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size: 36px;
+    cursor: pointer;
+    position:relative;
+  }
+  .square.light { background:var(--light); }
+  .square.dark  { background:var(--dark); }
+  .piece { pointer-events:none; } /* pieces themselves won't block drag target detection */
+  .dot {
+    position:absolute;
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background: var(--accent);
+    transform: translate(-50%, -50%);
+    left:50%;
+    top:50%;
+    box-shadow: 0 0 6px rgba(0,0,0,0.25);
+    display:none;
+    z-index: 5;
+  }
+  .dot.show { display:block; }
+  .square.highlight { outline: 3px solid rgba(46,204,113,0.25); box-shadow: inset 0 0 12px rgba(255,255,255,0.06); }
+  .loading-overlay {
+    position:absolute;
+    inset:0;
+    background: rgba(255,255,255,0.85);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:600;
+    font-size:18px;
+    z-index: 50;
+    display:none;
+  }
+  .loading-overlay.show { display:flex; }
+  /* Drag ghost */
+  .dragging {
+    position:fixed;
+    pointer-events:none;
+    font-size:36px;
+    transform: translate(-50%,-50%);
+    z-index:100;
+  }
+  .controls { margin-top:12px; text-align:center; }
+  button { padding:6px 12px; border-radius:6px; border:1px solid #ccc; background:white; cursor:pointer; }
+  .status { margin-left:12px; font-size:14px; color:#333; }
+</style>
+</head>
+<body>
+  <div class="board-wrap">
+    <div id="board" class="board" aria-label="Chessboard"></div>
+    <div id="loading" class="loading-overlay">Loading…</div>
+  </div>
+
+  <div class="controls">
+    <button id="resetBtn">Reset to start position</button>
+    <span class="status" id="statusText"></span>
+  </div>
+
+<script>
+/*
+Frontend assumptions / notes:
+- Board indexing: 0 = a8, 1 = b8, ... 7 = h8, 8 = a7, ... 63 = h1 (top-to-bottom, left-to-right).
+- Server response expected: JSON array-of-64, each entry is an array of destination indices (0..63).
+  Example:
+    [
+      [],            // moves for source 0 (a8)
+      [9, 17, 18],   // moves for source 1 (b8)
+      ...
+      []
+    ]
+- POST body: { fen: "<FEN-string>" } ; server must return JSON described above.
+*/
+
+const PIECE_UNICODE = {
+  'P':'♙','N':'♘','B':'♗','R':'♖','Q':'♕','K':'♔',
+  'p':'♟','n':'♞','b':'♝','r':'♜','q':'♛','k':'♚'
+};
+
+const boardEl = document.getElementById('board');
+const loadingEl = document.getElementById('loading');
+const statusText = document.getElementById('statusText');
+const resetBtn = document.getElementById('resetBtn');
+
+const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+let boardState = new Array(64).fill(null); // each entry: piece char or null. Index 0=a8 ... 63=h1
+let moveMap = null; // will hold server returned 64-element array
+let selectedSquare = null; // source index
+let dragElement = null; // ghost piece element
+let draggingFrom = null;
+let dragOffset = {x:0,y:0};
+let pointerDown = false;
+
+// build board squares top-to-bottom
+function buildBoard() {
+  boardEl.innerHTML = '';
+  for (let i = 0; i < 64; i++) {
+    const sq = document.createElement('div');
+    sq.className = 'square';
+    // determine color: file = i % 8, rank = Math.floor(i / 8) (0=rank8)
+    const file = i % 8;
+    const rank = Math.floor(i / 8);
+    const isLight = ((file + rank) % 2) === 0; // top-left a8 should be light
+    sq.classList.add(isLight ? 'light' : 'dark');
+    sq.dataset.index = i;
+    sq.addEventListener('pointerdown', onPointerDownSquare);
+    sq.addEventListener('pointerup', onPointerUpSquare);
+    sq.addEventListener('pointerenter', onPointerEnterSquare);
+    sq.addEventListener('pointerleave', onPointerLeaveSquare);
+    // dot element
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    sq.appendChild(dot);
+    boardEl.appendChild(sq);
+  }
+}
+
+// render pieces from boardState
+function renderPieces() {
+  for (let i = 0; i < 64; i++) {
+    const sq = boardEl.children[i];
+    // clear existing piece node
+    let pieceNode = sq.querySelector('.piece');
+    if (pieceNode) pieceNode.remove();
+
+    const p = boardState[i];
+    if (p) {
+      const el = document.createElement('div');
+      el.className = 'piece';
+      el.textContent = PIECE_UNICODE[p] || '?';
+      el.style.touchAction = 'none';
+      el.draggable = false;
+      sq.appendChild(el);
+    }
+    // hide dots initially
+    const dot = sq.querySelector('.dot');
+    dot.classList.remove('show');
+    sq.classList.remove('highlight');
+  }
+}
+
+// convert boardState to FEN (simple generator, doesn't track halfmove/fullmove properly except using defaults)
+function boardToFEN(activeColor='w', castling='KQkq', ep='-', halfmove=0, fullmove=1) {
+  // boardState is 0=a8 ... 63=h1; FEN ranks are 8->1
+  let fenRanks = [];
+  for (let rank = 0; rank < 8; rank++) {
+    let row = '';
+    let empty = 0;
+    for (let file = 0; file < 8; file++) {
+      const idx = rank * 8 + file;
+      const piece = boardState[idx];
+      if (!piece) { empty++; }
+      else {
+        if (empty > 0) { row += empty; empty = 0; }
+        row += piece;
+      }
+    }
+    if (empty > 0) row += empty;
+    fenRanks.push(row);
+  }
+  // fenRanks currently rank8..rank1 because our index 0 = a8 ... good
+  const fenPosition = fenRanks.join('/');
+  return `${fenPosition} ${activeColor} ${castling} ${ep} ${halfmove} ${fullmove}`;
+}
+
+// helper to set boardState from FEN (simple parse)
+function setBoardFromFEN(fen) {
+  const parts = fen.split(' ');
+  const position = parts[0];
+  const ranks = position.split('/');
+  if (ranks.length !== 8) {
+    console.error('Invalid FEN passed to frontend:', fen);
+    return;
+  }
+  const newBoard = new Array(64).fill(null);
+  for (let r = 0; r < 8; r++) {
+    const rankStr = ranks[r];
+    let file = 0;
+    for (let ch of rankStr) {
+      if (ch >= '1' && ch <= '8') {
+        file += parseInt(ch, 10);
+      } else {
+        const idx = r * 8 + file;
+        newBoard[idx] = ch;
+        file++;
+      }
+    }
+  }
+  boardState = newBoard;
+  renderPieces();
+}
+
+// network: send FEN to /analyze_test and await 64x64 response
+async function analyzePosition(fen) {
+  showLoading(true, 'Analyzing position…');
+  setStatus('calling analyze_test');
+  try {
+    const resp = await fetch('localhost:8000/analyze_test', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ fen })
+    });
+    if (!resp.ok) {
+      throw new Error('Server error: ' + resp.status);
+    }
+    const data = await resp.json();
+    // Basic validation: array length 64
+    if (!Array.isArray(data) || data.length !== 64) {
+      console.warn('Unexpected moveMap shape from server', data);
+      // fallback to empty
+      moveMap = new Array(64).fill(null).map(()=>[]);
+    } else {
+      // normalize each item to array of numbers
+      moveMap = data.map(entry => Array.isArray(entry) ? entry.map(x => Number(x)) : []);
+    }
+    setStatus('analysis done');
+  } catch (err) {
+    console.error(err);
+    setStatus('analysis failed: ' + (err.message || err));
+    // keep moveMap empty to avoid crashes
+    moveMap = new Array(64).fill(null).map(()=>[]);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// UI helpers
+function showLoading(show, text='Loading…') {
+  if (show) {
+    loadingEl.classList.add('show');
+    loadingEl.textContent = text;
+  } else {
+    loadingEl.classList.remove('show');
+  }
+}
+function setStatus(s) { statusText.textContent = s || ''; }
+
+// user interaction handlers
+function squareIndexFromEvent(ev) {
+  const el = ev.currentTarget;
+  return Number(el.dataset.index);
+}
+
+function showMoveDotsForSource(src) {
+  // hide all dots first
+  for (let i = 0; i < 64; i++) {
+    const dot = boardEl.children[i].querySelector('.dot');
+    dot.classList.remove('show');
+    boardEl.children[i].classList.remove('highlight');
+  }
+  if (!moveMap) return;
+  const targets = moveMap[src] || [];
+  for (const t of targets) {
+    if (t >= 0 && t < 64) {
+      const dot = boardEl.children[t].querySelector('.dot');
+      dot.classList.add('show');
+      boardEl.children[t].classList.add('highlight');
+    }
+  }
+}
+
+function hideMoveDots() {
+  for (let i = 0; i < 64; i++) {
+    const dot = boardEl.children[i].querySelector('.dot');
+    dot.classList.remove('show');
+    boardEl.children[i].classList.remove('highlight');
+  }
+}
+
+// pointer/drag logic
+function onPointerDownSquare(ev) {
+  ev.preventDefault();
+  const idx = squareIndexFromEvent(ev);
+  pointerDown = true;
+
+  // if square has a piece, select it and start possible drag
+  if (boardState[idx]) {
+    selectedSquare = idx;
+    showMoveDotsForSource(idx);
+    // create drag ghost
+    createDragGhost(idx, ev);
+    draggingFrom = idx;
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUpWindow);
+  } else {
+    // click on empty square => either move if selected and square is valid, or clear selection
+    if (selectedSquare !== null) {
+      attemptMove(selectedSquare, idx);
+    } else {
+      hideMoveDots();
+      selectedSquare = null;
+    }
+  }
+}
+
+function onPointerUpSquare(ev) {
+  // handled globally in pointerup window
+}
+
+function onPointerEnterSquare(ev) {
+  // highlight possible drop when dragging
+  if (!dragElement) return;
+  const idx = squareIndexFromEvent(ev);
+  if (selectedSquare !== null && isTargetValid(selectedSquare, idx)) {
+    boardEl.children[idx].classList.add('highlight');
+  } else {
+    boardEl.children[idx].classList.remove('highlight');
+  }
+}
+
+function onPointerLeaveSquare(ev) {
+  if (!dragElement) return;
+  const idx = squareIndexFromEvent(ev);
+  boardEl.children[idx].classList.remove('highlight');
+}
+
+function onPointerMove(ev) {
+  if (!dragElement) return;
+  dragElement.style.left = ev.clientX + 'px';
+  dragElement.style.top = ev.clientY + 'px';
+}
+
+function onPointerUpWindow(ev) {
+  pointerDown = false;
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUpWindow);
+  if (!dragElement) return;
+  // find element under pointer
+  dragElement.remove();
+  dragElement = null;
+  const targetEl = document.elementFromPoint(ev.clientX, ev.clientY);
+  const sq = targetEl ? targetEl.closest('.square') : null;
+  if (sq) {
+    const idx = Number(sq.dataset.index);
+    if (selectedSquare !== null && isTargetValid(selectedSquare, idx)) {
+      attemptMove(selectedSquare, idx);
+      return;
+    }
+  }
+  // else invalid move: unselect and hide dots
+  selectedSquare = null;
+  hideMoveDots();
+}
+
+function createDragGhost(idx, ev) {
+  const piece = boardState[idx];
+  if (!piece) return;
+  dragElement = document.createElement('div');
+  dragElement.className = 'dragging';
+  dragElement.textContent = PIECE_UNICODE[piece] || '?';
+  document.body.appendChild(dragElement);
+  dragElement.style.left = ev.clientX + 'px';
+  dragElement.style.top = ev.clientY + 'px';
+}
+
+function isTargetValid(src, dst) {
+  if (!moveMap || !Array.isArray(moveMap[src])) return false;
+  return moveMap[src].indexOf(dst) !== -1;
+}
+
+function attemptMove(src, dst) {
+  if (!isTargetValid(src, dst)) {
+    // invalid — cancel
+    selectedSquare = null;
+    hideMoveDots();
+    return;
+  }
+  // perform move
+  boardState[dst] = boardState[src];
+  boardState[src] = null;
+  selectedSquare = null;
+  hideMoveDots();
+  renderPieces();
+  // after move, regenerate FEN & send to server
+  const fen = boardToFEN(); // no side-turn tracking here; server probably expects full FEN, but we'll send what we have
+  analyzePosition(fen);
+}
+
+// clicking reset
+resetBtn.addEventListener('click', () => {
+  setBoardFromFEN(START_FEN);
+  // initial analyze
+  analyzePosition(boardToFEN());
+});
+
+// clicking outside clears selection
+document.addEventListener('pointerdown', (ev) => {
+  const sq = ev.target.closest('.square');
+  if (!sq) {
+    selectedSquare = null;
+    hideMoveDots();
+  }
+});
+
+// initial setup
+buildBoard();
+setBoardFromFEN(START_FEN);
+
+// start first analysis and show loading
+(async () => {
+  await analyzePosition(boardToFEN());
+})();
+
+</script>
+</body>
+</html>
