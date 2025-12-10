@@ -111,6 +111,7 @@ parseVariantsINI(const std::string& iniText)
     return variants;
 }
 
+std::unordered_map<std::string, Variant>
 parse(const std::string& path) {
     try {
         // 1. Load file
@@ -118,11 +119,14 @@ parse(const std::string& path) {
 
         // 2. Parse
         auto variants = parseVariantsINI(iniText);
+        return variants;
 
     } catch (const std::exception& e) {
         std::cerr << "ERROR: " << e.what() << "\n";
     }
+    return {};
 }
+std::unordered_map<std::string, Variant>
 test_parse(const std::string& path) {
     try {
         // 1. Load file
@@ -146,7 +150,7 @@ test_parse(const std::string& path) {
         }
 
         // Example: access Flock Chess
-        if (variants.contains("Flock-Chess")) {
+        if (variants.find("Flock-Chess") != variants.end()) {
             auto& flock = variants["Flock-Chess"];
 
             std::cout << "Pieces: ";
@@ -155,15 +159,16 @@ test_parse(const std::string& path) {
             std::cout << "\nMovesets:\n";
             for (auto& m : flock.movesets) std::cout << "  " << m << "\n";
 
-            std::cout << "Effects = " << flock["Effects"] << "\n";
-            std::cout << "Board   = " << flock["Board"] << "\n";
-            std::cout << "StdPos  = " << flock["StdPos"] << "\n";
-            std::cout << "move_num  = " << flock["move_num"] << "\n";
-            std::cout << "board_num  = " << flock["board_num"] << "\n";
+            std::cout << "Effects = " << flock.effects << "\n";
+            std::cout << "Board   = " << flock.board << "\n";
+            std::cout << "StdPos  = " << flock.stdPos << "\n";
+            std::cout << "move_num  = " << flock.move_num << "\n";
+            std::cout << "board_num  = " << flock.board_num << "\n";
 
         }
-
+        return variants;
     } catch (const std::exception& e) {
         std::cerr << "ERROR: " << e.what() << "\n";
     }
+    return {};
 }

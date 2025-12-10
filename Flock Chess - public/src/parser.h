@@ -2,9 +2,10 @@
 #include <sstream>
 #include <iostream>
 #include <string>
+#include <vector>
 #include <unordered_map>
 
-extern struct Variant {
+struct Variant {
     std::string gameMode;               // [Section]
 
     std::vector<char> pieces;           // Pieces=KQRBNPD
@@ -18,5 +19,7 @@ extern struct Variant {
     int board_num = 1;                  // Board_num=2 (optional, default = 1)
 };
 
-parse(const std::string& path="./variants.ini")
-test_parse(const std::string& path="./variants.ini")
+std::unordered_map<std::string, Variant> 
+parse(const std::string& path="./variants.ini");
+std::unordered_map<std::string, Variant> 
+test_parse(const std::string& path="./variants.ini");

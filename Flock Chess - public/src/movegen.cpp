@@ -76,65 +76,40 @@ uint64_t init_moves() {
 // - Takes FEN + mode
 // - If mode = "Flock", generate bitboards and call init_moves()
 // ------------------------------------------------------------
-uint64_t[64] generate_from_fen(const std::string& fen, const std::string& mode) {
-    uint64_t moves[64]   
-    if (mode == "Flock") {
-        Bitboards bb = parse_fen_bitboards(fen);
+// std::array<uint64_t, 64> generate_from_fen(const std::string& fen, const std::string& mode) {
+//     std::array<uint64_t, 64> moves{}; // zero-initialized
 
-        std::cout << "Occupancy: " << bb.occupancy << "\n";
-        std::cout << "Bishops:   " << bb.bishops   << "\n";
-        std::cout << "Rooks:     " << bb.rooks     << "\n";
-        std::cout << "Queens:    " << bb.queens    << "\n";
-        std::cout << "Kings:     " << bb.kings     << "\n";
-        std::cout << "Pawns:     " << bb.pawns     << "\n";
-        std::cout << "Knights:   " << bb.knights   << "\n";
-        std::cout << "Ducks:     " << bb.ducks     << "\n";
+//     if (mode == "Flock") {
+//         Bitboards bb = parse_fen_bitboards(fen);
 
-        // Clear output
-        for (int i = 0; i < 64; i++)
-            moves[i] = 0ULL;
+//         uint64_t occ = bb.occupancy;
+//         uint64_t occ_copy = occ;
 
-        uint64_t occ = bb.occupancy;
+//         while (occ_copy) {
+//             int sq = indexLSB(occ_copy);
+//             uint64_t bit = 1ULL << sq;
+//             occ_copy &= occ_copy - 1;
 
-        // Iterate through occupied squares
-        uint64_t occ_copy = occ;
-        while (occ_copy) {
-            int sq = indexLSB(occ_copy);
-            uint64_t bit = 1ULL << sq;
-            occ_copy &= occ_copy - 1;  // clear LSB
+//             if (bb.bishops & bit)
+//                 moves[sq] = bishop_attacks(sq, occ);
+//             else if (bb.rooks & bit)
+//                 moves[sq] = rook_attacks(sq, occ);
+//             else if (bb.queens & bit)
+//                 moves[sq] = rook_attacks(sq, occ) | bishop_attacks(sq, occ);
+//             else if (bb.knights & bit)
+//                 moves[sq] = knight_attacks(sq);
+//             else if (bb.kings & bit)
+//                 moves[sq] = king_attacks(sq);
+//             else if (bb.pawns & bit) {
+//                 bool isWhite = (sq / 8) < 4;
+//                 moves[sq] = isWhite ? pawn_attacks_white(sq)
+//                                     : pawn_attacks_black(sq);
+//             }
+//             else if (bb.ducks & bit)
+//                 moves[sq] = duck_attacks(sq, occ);
+//         }
+//     }
 
-            // Determine which piece is on this square and generate its moves
-            if (bb.bishops & bit) {
-                moves[sq] = bishop_attacks(sq, occ);
-            }
-            else if (bb.rooks & bit) {
-                moves[sq] = rook_attacks(sq, occ);
-            }
-            else if (bb.queens & bit) {
-                // Queen = rook + bishop
-                moves[sq] = rook_attacks(sq, occ) |
-                            bishop_attacks(sq, occ);
-            }
-            else if (bb.knights & bit) {
-                moves[sq] = knight_attacks(sq);
-            }
-            else if (bb.kings & bit) {
-                moves[sq] = king_attacks(sq);
-            }
-            else if (bb.pawns & bit) {
-                // You may choose color by square or store separate W/B pawn bitboards.
-                // Here is a simple placeholder:
-                bool isWhite = (sq / 8) < 4;   // example logic (replace if needed)
-                moves[sq] = isWhite ? pawn_attacks_white(sq)
-                                    : pawn_attacks_black(sq);
-            }
-            else if (bb.ducks & bit) {
-                moves[sq] = duck_attacks(sq, occ);
-            }
-        }
-        return moves;
-    }
+//     return moves;
+// }
 
-    // Default: do nothing
-    return moves;
-}

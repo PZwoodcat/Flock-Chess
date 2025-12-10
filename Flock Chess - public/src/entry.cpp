@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     // int b = std::atoi(argv[2]);
 
     // std::cout << multiply(a, b);
-    int out = init_moves();
+    uint64_t out = init_moves();
     std::cout << out;
     return 0;
 }
