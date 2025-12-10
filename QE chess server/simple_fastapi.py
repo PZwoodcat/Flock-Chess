@@ -10,10 +10,14 @@ here = Path(__file__).resolve().parent
 root = here.parent
 cross_platform_common_path = root / "Flock Chess - public" / "build" / "src" / "Debug"
 # append the path in a platform-independent way
-if platform.system() == "Windows":
-    exe_path = cross_platform_common_path / "entry.exe"
-else:
-    exe_path = cross_platform_common_path / "entry"
+def get_executable_path(cross_platform_common_path, runner):
+    """Return the correct executable path depending on the OS."""
+    if platform.system() == "Windows":
+        return cross_platform_common_path / (runner + ".exe")
+    else:
+        return cross_platform_common_path / runner
+exe_path = get_executable_path(cross_platform_common_path, "entry")
+exe_path_analyze = get_executable_path(cross_platform_common_path, "analyze_test")
 # print("Using executable:", exe_path)
 app = FastAPI()
 
@@ -43,7 +47,7 @@ def compute(data: MultiplyInput):
 @app.post("/analyze_test")
 def analyze_test(data: MultiplyInput):
     result = subprocess.run(
-        [exe_path, str(data.a), str(data.b)],
+        [exe_path_analyze, str(data.a), str(data.b)],
         capture_output=True,
         text=True
     )

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include "movegen.h"
+#include "parser.h"
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -12,6 +13,7 @@ int main(int argc, char* argv[]) {
     std::string& fen = argv[1];
 
     // std::cout << multiply(a, b);
+    test_parse("./variants.ini");
     Bitboards out = parse_fen_bitboards(fen);
     std::cout << out;
     return 0;
