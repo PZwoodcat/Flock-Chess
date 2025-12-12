@@ -2,4 +2,4 @@
 #pragma once
 #include "magic.h"
 
-Bitboard get_knight_attacks(int sq);
+Bitboard knight_attacks(int sq, Bitboard occ);

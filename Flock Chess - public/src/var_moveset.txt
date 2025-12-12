@@ -15,6 +15,9 @@ Find your moveset here. If it is not here, you must implement it
 14 - space jump left right
 15 - parametric
 16 - king
-17 - pawn
+17 - white pawn
 18 - space jump front
 19 - duck
+20 - black pawn
+21 - large knight
+22 - large queen

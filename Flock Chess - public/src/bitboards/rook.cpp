@@ -172,7 +172,7 @@ Bitboard rook_attacks(int sq, Bitboard occ) {
     std::string filename = "rookMagics.bin";
 
     if (!file_exists(filename)) {
-        std::cout << "File does not exist, creating it...\n";
+        // std::cout << "File does not exist, creating it...\n";
         init_rook_magics();
     }
     if (!read_rook_magics_from_file(filename)) {

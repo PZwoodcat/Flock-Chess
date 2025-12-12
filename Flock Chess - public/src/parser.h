@@ -9,7 +9,8 @@ struct Variant {
     std::string gameMode;               // [Section]
 
     std::vector<char> pieces;           // Pieces=KQRBNPD
-    std::vector<std::string> movesets;  // Moveset=[16, 1+2+3, 1, 2, 3, 17]
+    std::unordered_map<char, std::string> movesets;  
+                                        // Moveset=[16, 1+2+3, 1, 2, 3, 17]
 
     std::string effects;                // Effects=Flock, Quantum, Powerup (optional)
     std::string board;                  // Board=8x8

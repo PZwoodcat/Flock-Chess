@@ -13,7 +13,9 @@ std::string loadFile(const std::string& path) {
 std::vector<char> parsePieceList(const std::string& s) {
     std::vector<char> pieces;
     for (char c : s)
-        if (!isspace(c))
+        if (isspace(c) || c == '+')
+            continue;
+        else
             pieces.push_back(c);
     return pieces;
 }
@@ -48,6 +50,8 @@ parseVariantsINI(const std::string& iniText)
     std::string line;
 
     Variant* cur = nullptr;
+    std::vector<std::string> pendingMoveset;
+    bool movesetPending = false;
 
     while (std::getline(ss, line)) {
         // Trim
@@ -83,9 +87,36 @@ parseVariantsINI(const std::string& iniText)
         // Assign to strict fields
         if (key == "Pieces") {
             cur->pieces = parsePieceList(val);
+
+            // If moveset was seen earlier, build the map now
+            if (movesetPending && !pendingMoveset.empty()) {
+                if (pendingMoveset.size() != cur->pieces.size()) {
+                    std::cerr << "Error: Mismatched Pieces and Moveset count in variant "
+                              << cur->gameMode << "\n";
+                } else {
+                    for (size_t i = 0; i < cur->pieces.size(); ++i) {
+                        cur->movesets[cur->pieces[i]] = pendingMoveset[i];
+                    }
+                }
+                movesetPending = false;
+            }
         }
         else if (key == "Moveset") {
-            cur->movesets = parseMovesetList(val);
+            pendingMoveset = parseMovesetList(val);
+
+            // If pieces already exist, build map immediately
+            if (!cur->pieces.empty()) {
+                if (pendingMoveset.size() != cur->pieces.size()) {
+                    std::cerr << "Error: Mismatched Pieces and Moveset count in variant "
+                              << cur->gameMode << "\n";
+                } else {
+                    for (size_t i = 0; i < cur->pieces.size(); ++i) {
+                        cur->movesets[cur->pieces[i]] = pendingMoveset[i];
+                    }
+                }
+            } else {
+                movesetPending = true;  // wait until pieces appear
+            }
         }
         else if (key == "Effects") {
             cur->effects = val;
@@ -107,7 +138,6 @@ parseVariantsINI(const std::string& iniText)
                       << "' in variant '" << cur->gameMode << "'\n";
         }
     }
-
     return variants;
 }
 
@@ -141,7 +171,11 @@ test_parse(const std::string& path) {
             std::cout << "Pieces: ";
             for (char c : v.pieces) std::cout << c << " ";
             std::cout << "\nMovesets: ";
-            for (auto& m : v.movesets) std::cout << m << " ";
+            int i = 0;
+            for (const auto& [piece, mv] : v.movesets) {
+                std::cout << piece << " = " << mv << " ";
+                if (i++ % 8 == 0) std::cout << "\n";
+            }
             std::cout << "\nEffects: " << v.effects << "\n";
             std::cout << "Board: " << v.board << "\n";
             std::cout << "StdPos: " << v.stdPos << "\n";
@@ -157,7 +191,9 @@ test_parse(const std::string& path) {
             for (char c : flock.pieces) std::cout << c << " ";
 
             std::cout << "\nMovesets:\n";
-            for (auto& m : flock.movesets) std::cout << "  " << m << "\n";
+            for (const auto& [piece, mv] : flock.movesets) {
+                std::cout << piece << " = " << mv << "\n";
+            }
 
             std::cout << "Effects = " << flock.effects << "\n";
             std::cout << "Board   = " << flock.board << "\n";

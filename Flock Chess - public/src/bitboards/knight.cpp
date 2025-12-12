@@ -26,12 +26,21 @@ Bitboard knight_mask(int sq) {
 }
 
 Bitboard knightAttacks[64];
+bool knightAttacksInitialized = false;
 
 void init_knight_attacks() {
     for (int sq = 0; sq < 64; sq++)
         knightAttacks[sq] = knight_mask(sq);
+
+    knightAttacksInitialized = true;
 }
 
-Bitboard get_knight_attacks(int sq) {
+Bitboard knight_attacks(int sq, Bitboard occ)
+{
+    (void)occ; // knights jump; ignore occupancy
+
+    if (!knightAttacksInitialized)
+        init_knight_attacks();
+
     return knightAttacks[sq];
 }

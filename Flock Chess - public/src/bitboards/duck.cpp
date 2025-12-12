@@ -225,7 +225,7 @@ Bitboard duck_attacks(int sq, Bitboard occ) {
     std::string filename = "duckMagics.bin";
 
     if (!file_exists(filename)) {
-        std::cout << "File does not exist, creating it...\n";
+        // std::cout << "File does not exist, creating it...\n";
         init_duck_magics();
     }
     if (!read_duck_magics_from_file(filename)) {

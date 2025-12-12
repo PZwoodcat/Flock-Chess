@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import platform
+import json
 
 # get current script directory
 here = Path(__file__).resolve().parent
@@ -44,11 +45,15 @@ def compute(data: MultiplyInput):
     )
     return {"output": result.stdout.strip()}
 
+class AnalyzeTest(BaseModel):
+    a: str
+    b: str
+
 @app.post("/analyze_test")
-def analyze_test(data: MultiplyInput):
+def analyze_test(data: AnalyzeTest):
     result = subprocess.run(
         [exe_path_analyze, str(data.a), str(data.b)],
         capture_output=True,
         text=True
     )
-    return {"output": result.stdout.strip()}
+    return json.loads(result.stdout)

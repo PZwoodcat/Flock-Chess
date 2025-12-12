@@ -189,7 +189,7 @@ Bitboard bishop_attacks(int sq, Bitboard occ) {
     std::string filename = "bishopMagics.bin";
 
     if (!file_exists(filename)) {
-        std::cout << "File does not exist, creating it...\n";
+        // std::cout << "File does not exist, creating it...\n";
         init_bishop_magics();
     }
     if (!read_bishop_magics_from_file(filename)) {

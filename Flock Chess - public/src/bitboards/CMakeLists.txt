@@ -4,6 +4,8 @@ add_library(bitboards
     rook.cpp
     knight.cpp
     duck.cpp
+    king.cpp
+    pawn.cpp
     magic.cpp
 )
 
